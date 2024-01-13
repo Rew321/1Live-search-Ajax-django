@@ -1,0 +1,114 @@
+{% extends 'base.html'%}
+
+{% block title %}Live Search {% endblock %}
+
+{% block content %}
+
+<style>
+    .search:focus{
+        background-color: #E8E8E8;
+    }
+    .result-card {
+        width: 50%;
+        max-height:auto !important;
+        box-shadow: 0 8px 8px 0 rgba(0, 0, 0, 0.25);
+        border-radius: 7px;
+        border-color: cadetblue;
+        padding: 15px 15px;
+        margin: auto;
+    }
+    .not-visible{
+        display: none;
+    }
+    
+    .link{
+        text-decoration: none;
+    }
+
+    .webseries{
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+    input[type]{
+        border-color:cadetblue!important;
+    }
+</style>
+    <div class="w-100 text-center">
+        <form autocomplete="off" id="search-form" method="post">
+            {% csrf_token %}
+            <input type="text" id="search-input" class="p-2 w-50 search mt-4" placeholder="live search for webseries...">
+        </form>
+        <!-- result card-->
+        <div id="result-box" class="result-card not-visible">
+
+        </div>
+    </div>
+
+    <!--javascripts-->
+    <script>
+
+        const sendSearchData = (series) => {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "search" %}',
+                data: {
+                    'csrfmiddlewaretoken':csrf,
+                    'series': series,
+                },
+                success: (res) => {
+                    const data = res.data
+                    if (Array.isArray(data)){
+                        result_box.innerHTML = ""
+                        //Now display the searched result  
+                        data.forEach(series=> {
+                            result_box.innerHTML += `
+                                    <a href="/detail/${series.pk}" class='link'>
+                                        <div class="row mt-2 mb-2">
+                                            <div class="col-2">
+                                                <img src="${series.image}" class='webseries'>
+                                            </div>
+                                            <div class="col-10">
+                                                <h5>${series.name}</h5>
+                                            </div>
+                                        </div>    
+                                    </a>`
+                        });
+                    }else{
+                        if (search_input.value.length > 0){
+                             result_box.innerHTML = `<b>${data}</b>`
+                        }else{
+                            result_box.classList.add('not-visible')
+                        }
+                    }
+                },
+                error: (err) => {
+                    console.log(err);
+                }
+            })
+        }
+        //get search form
+        const search_form = document.getElementById('search-form')
+        // get search input
+        const search_input = document.getElementById('search-input');
+
+        const result_box = document.getElementById('result-box');
+
+        //get csrf token
+        const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
+    
+        search_input.addEventListener('keyup', e=>{
+            console.log(e.target.value);
+
+        // Now when key is up show the result box
+        
+        if(result_box.classList.contains('not-visible')){
+            result_box.classList.remove('not-visible')
+        }
+
+        // lets get the search results
+
+        sendSearchData(e.target.value);
+        });
+    </script>
+{% endblock %}
